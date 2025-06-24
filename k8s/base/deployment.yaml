@@ -36,7 +36,7 @@ spec:
     app: flask-app
   ports:
   - protocol: TCP
-    port: 80          # External port to expose
-    targetPort: 5000
-    nodeport: 8080 # Container port
-  type: LoadBalancer  # Change to NodePort if you're running locally
+    port: 80          # Service port
+    targetPort: 5000  # Container port
+    nodePort: 30800   # Node port, must be 30000-32767
+  type: NodePort      # Use NodePort for local clusters
