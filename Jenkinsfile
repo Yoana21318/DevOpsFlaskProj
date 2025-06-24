@@ -11,7 +11,7 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-        git 'https://github.com/Yoana21318/DevOpsFlaskProj.git'
+        git branch: 'main', url: 'https://github.com/Yoana21318/DevOpsFlaskProj.git'
       }
     }
 
