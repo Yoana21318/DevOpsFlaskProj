@@ -11,39 +11,36 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-          checkout scm
+        git 'https://github.com/Yoana21318/DevOpsFlaskProj.git'
       }
     }
 
     stage('Build image') {
-      steps {
+      steps{
         script {
-          dockerImage = docker.build(dockerimagename, '-f backend/Dockerfile backend')
+          dockerImage = docker.build dockerimagename
         }
       }
     }
 
     stage('Pushing Image') {
       environment {
-        registryCredential = 'dockerhublogin'
-      }
-      steps {
+               registryCredential = 'dockerhublogin'
+           }
+      steps{
         script {
-          docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+          docker.withRegistry( 'https://registry.hub.docker.com', registryCredential ) {
             dockerImage.push("latest")
           }
         }
       }
     }
 
-    stage('Verify files') {
-  steps {
-    sh 'ls -R k8s/base'
-  }
-}
-    stage('Deploy App') {
+    stage('Deploying App to Kubernetes') {
       steps {
-        kubernetesDeploy(configs: "k8s/base/deployment.yaml", kubeconfigId: "kubernetes")
+        script {
+          kubernetesDeploy(configs: "deployment.yaml", kubeconfigId: "kubernetes")
+        }
       }
     }
 
