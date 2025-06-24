@@ -1,47 +1,52 @@
 pipeline {
-  agent any
 
   environment {
-    IMAGE_NAME = 'your-dockerhub-username/flask-app'
-    IMAGE_TAG = "${env.BUILD_NUMBER}"
-    KUBECONFIG_CREDENTIALS_ID = 'kubeconfig'  // Replace with your Jenkins credential ID for K8s
-    DOCKER_CREDENTIALS_ID = 'dockerhub'      // Replace with your Jenkins DockerHub credentials ID
+    dockerimagename = "stoyanov808/app"
+    dockerImage = ""
   }
 
+  agent any
+
   stages {
-    stage('Checkout') {
+
+    stage('Checkout Source') {
       steps {
-        checkout scm
+          checkout scm
       }
     }
 
-    stage('Build Docker Image') {
+    stage('Build image') {
       steps {
         script {
-          docker.build("${IMAGE_NAME}:${IMAGE_TAG}", './app')
+          dockerImage = docker.build(dockerimagename, '-f backend/Dockerfile backend')
         }
       }
     }
 
-    stage('Push Docker Image') {
+    stage('Pushing Image') {
+      environment {
+        registryCredential = 'dockerhublogin'
+      }
       steps {
         script {
-          docker.withRegistry('', "${DOCKER_CREDENTIALS_ID}") {
-            docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push()
+          docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+            dockerImage.push("latest")
           }
         }
       }
     }
 
-    stage('Deploy to Kubernetes') {
+    stage('Verify files') {
+  steps {
+    sh 'ls -R k8s/base'
+  }
+}
+    stage('Deploy App') {
       steps {
-        withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIALS_ID}", variable: 'KUBECONFIG')]) {
-          sh '''
-          export KUBECONFIG=$KUBECONFIG
-          kubectl apply -k k8s/overlays/dev
-          '''
-        }
+        kubernetesDeploy(configs: "k8s/base/deployment.yaml", kubeconfigId: "kubernetes")
       }
     }
+
   }
+
 }
